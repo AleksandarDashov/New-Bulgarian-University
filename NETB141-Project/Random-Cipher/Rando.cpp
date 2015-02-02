@@ -2,8 +2,6 @@
 #include <iostream>
 #include <algorithm>
 #include <string>
-#include <ctime>
-#include <cstdlib>
 
 using namespace std;
 
@@ -12,6 +10,7 @@ Rando::Rando()
 	alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 	letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 }
+
 string Rando::encode()
 {
 	for(int i = 0; i < sentence.size(); i++)
@@ -27,7 +26,7 @@ string Rando::encode()
 			}
 		}	
 	}
-	cout << "Encoded sentence: " << sentence << endl;
+	cout << "Encoded string: " << sentence << endl;
 	
 	return sentence;
 }
@@ -46,7 +45,7 @@ string Rando::decode()
 			}
 		}
 	}
-	cout << "Decoded sentence: " << sentence << endl;
+	cout << "Decoded string: " << sentence << endl;
 	
 	return sentence;
 }
@@ -70,14 +69,16 @@ char Rando::randLetter()
 string Rando::setSentence()
 {
 	string enterString; 
+	cout << "Enter a string you wish to encode/decode: " << endl;
 	std::getline(std::cin, enterString);
 	sentence = enterString;
 	
 	return enterString;
 }
+
 string Rando::getSentence()
 {
-	cout << "Sentence: " << sentence << endl;
+	cout << "You entered: " << sentence << endl;
 	return sentence;
 }
 //substituting the alphabet string with random letters which generates the cipher string
