@@ -1,6 +1,7 @@
 #ifndef RANDO_H
 #define RANDO_H
 #include <string>
+
 using namespace std;
 
 class Rando
@@ -19,7 +20,6 @@ class Rando
 		string alphabet;
 		string sentence;
 		string cipher;
-	
 };
 
 #endif
