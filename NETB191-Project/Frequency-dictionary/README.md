@@ -1,1 +1,1 @@
-
+Write a program that opens a plain text ASCII file and generates a frequency dictionary as a result plain text file. The frequency dictionary contains each word met in the text, paired with the number of its occurrences. The words in the resulting file are sorted in descending order of their occurrences. The program must contain at least one class.
