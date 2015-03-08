@@ -1,4 +1,4 @@
-Write a program that generates a random cipher for text messages. Each letter in the alphabet is substituted by another letter in a random manner. The program must be able both to encode and decode messages using the generated cipher. The program must have the following features:
+Write a C++ program that generates a random cipher for text messages. Each letter in the alphabet is substituted by another letter in a random manner. The program must be able both to encode and decode messages using the generated cipher. The program must have the following features:
 
     The program generates a cipher by replacing each Latin letter in the alphabet by one of the other letters, based on the pseudo-random numbers generator. 
     Two different letters cannot be replaced by the same letter.
