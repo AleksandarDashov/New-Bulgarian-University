@@ -1,6 +1,6 @@
 
 
-package Homework3;
+package onlinetest;
 import java.io.*;
 import java.net.*;
 public class QuizServer {
