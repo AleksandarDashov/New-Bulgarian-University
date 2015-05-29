@@ -1,6 +1,6 @@
 
 
-package Homework3;
+package onlinetest;
 import java.io.*;
 import java.net.*;
 
@@ -10,15 +10,23 @@ public class QuizClient
     private static final String HOST_NAME = "localhost";
     private static final int PORT_NUMB = 2600;
     private static final int NUMBER_OF_QUESTIONS = 10;
-
+    
+    private Socket quizClient;
+    // I/O
+    private PrintWriter out;
+    private BufferedReader in;
+    
+    public QuizClient()
+    {
+        quizClient = null;
+        out = null;
+        in = null;
+    }
+    
     public void connectingToServer() throws IOException
     {
-        Socket quizClient = null;
-        PrintWriter out = null;
-        BufferedReader in = null;
         try
         {
-           
             quizClient = new Socket(HOST_NAME, PORT_NUMB);
             System.out.println("Connecting to port: " + PORT_NUMB);
             out = new PrintWriter(quizClient.getOutputStream(), true);
