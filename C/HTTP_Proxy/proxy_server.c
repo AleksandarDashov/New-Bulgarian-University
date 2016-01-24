@@ -1,3 +1,6 @@
+/*proxy_server.c*/
+/*gcc proxy_server.c passiveTCP.c passivesock.c errexit.c connectTCP.c connectsock.c -o proxy_server -lpthread
+*/
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -14,30 +17,55 @@
 #include <sys/wait.h>
 
 #include <pthread.h>
-#define QLEN 32
+
+#define QUEUE_SIZE 10
 #define BUFFER_SIZE 4096
 #define STRING_SIZE 128
-pthread_t pth_id[10];
-
+#define CACHE_SIZE 16
+pthread_t pth_id[QUEUE_SIZE];
+int i;
+char term_char = '\0';
+void *cache[CACHE_SIZE];
+int cache_index = 0;
+//reaper to kill dead children
 void reaper(int sig)
 {
 	int	status;
 	while (wait3(&status, WNOHANG, (struct rusage *)0) >= 0);
 
 }
+//
+unsigned long hashing(char* word)
+{
+    unsigned long hash = 0;
+    int c;
+    while(c = *word++)
+    {
+        hash = hash + c;
+    }
+    return hash;
+}
+char insert_cache(unsigned long hashed)
+{
+    cache[cache_index] = (unsigned long*)hashed;
+    cache_index++;
+    if(cache_index >= CACHE_SIZE)
+    {
+        cache_index = 0;
+    } 
+}
+
 extern int errno;
 int passiveTCP(const char* service, int queue_length);
 int connectTCP(const char* host, const char* service);
-
 int errexit(const char* format, ...);
-int i;
-char term_char = '\0';
+
 
 void proxy_thread(void* slave_sockfd)
 {
     printf("In Proxy Thread...\n");
     int fd = *(int *)slave_sockfd; //clients file descriptor
-    char* host_name = "www.jobs.bg"; //default host to use
+    char* host_name = "www.nbu.bg"; //default host to use
     char* port_number = "80"; //port number (80)
     char buffer[BUFFER_SIZE]; //buffer for the download proccess
     int n;
@@ -45,16 +73,25 @@ void proxy_thread(void* slave_sockfd)
 
 
 
-    int fileSock; //fd of the specified URL
+    int fd_URL; //fd of the specified URL
     char get_command[STRING_SIZE] = "GET /";
     char request_resouce[STRING_SIZE] = "";
     memset(&request_resouce[0], term_char, STRING_SIZE);//clear the buffer
     //read
     read(fd, request_resouce, STRING_SIZE);
     printf("Requested resource: %s\n", request_resouce);
+    //cache and hash the resource
+
+    unsigned long hash =  hashing(request_resouce);
+    insert_cache(hash);
+    for(int i =0; i < CACHE_SIZE; i++)
+    {
+        printf("Cache: %p\n" ,cache[i]);
+    }
+
 	//connecting to the specified URL by host_name and returning fd
-    fileSock = connectTCP(host_name, port_number);
-	if(fileSock < 0)
+    fd_URL = connectTCP(host_name, port_number);
+	if(fd_URL < 0)
 	{
 		errexit("Connecting to URL failed: %s\n", strerror(errno));
 	}
@@ -64,23 +101,20 @@ void proxy_thread(void* slave_sockfd)
 	strcat(get_command, "\r\n\r\n");
     printf("GET : %s\n", get_command);
 	//sending the get request
-	//*****ASK QUESTIOOOON************
-    int rc = write(fileSock, get_command, strlen(get_command));
-
-    if(rc==-1)
+    if( (write(fd_URL, get_command, strlen(get_command))) < 0)
 	{
-		errexit("XXXSending request failed: %s\n", strerror(errno));
+		errexit("Sending request failed: %s\n", strerror(errno));
 	}
-    while((n = read(fileSock, buffer, BUFFER_SIZE)) > 0)
+    while((n = read(fd_URL, buffer, BUFFER_SIZE)) > 0)
     {
-		printf("Num read n:%d\n", n);
         //send info to client
         write(fd,buffer,n);
-        //clear the buffer, so the read function can fill it with new information
+        //clear the bu,fache[0]f;er, so the read function can fill it with new information
         memset(&buffer[0], term_char, BUFFER_SIZE);
     }
 	//closing connection with fd
     close(fd);
+    close(fd_URL);
     return;
 }
 
@@ -88,10 +122,11 @@ int main(int argc, char* argv[])
 {
     printf("\nArgc: %d\nArgv[0]: %s\nArgv[1]: %s\nArgv[2]: %s\n",argc,  argv[0], argv[1], argv[2]);
     struct sockaddr_in client_address; //address pf the client
-    char* port_numb = "8888"; //port number //4040
+    unsigned int address_length;//length of the clients address
+    char* port_numb = "8888"; //port number
     int master_sock; //master socket
     int slave_sock; //slave socket
-    unsigned int address_length;//length of the clients address
+    
     switch (argc)
     {
         case 1:
@@ -103,12 +138,10 @@ int main(int argc, char* argv[])
             errexit("usage: proxy [port]\n", "omg");
     }
     printf("After switch\n");
-    master_sock = passiveTCP(port_numb, QLEN);
+    master_sock = passiveTCP(port_numb, QUEUE_SIZE);
     printf("After passiveTCP\n");
     (void) signal(SIGCHLD, reaper);
     i = 0;
-
-
 
     while(1)
     {
