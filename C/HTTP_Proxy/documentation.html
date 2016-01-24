@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>HTTP Proxy</title>
+</head>
+<body>
+
+<h1>Aleksandar Dashov</h1>
+<h2>F65764</h2>
+<h4>Problem:</h4>
+
+<p>Implement a HTTP proxy to http://www.nbu.bg using passiveTCP()and   connectTCP() that works as an application gateway used for caching with hashing (using URL as cache index) of the web pages, and of the .gif and .jpg files. Use threads to ensure concurrency if more than one clients are using the proxy.</p>
+
+	<p>There are five main parts that we have to outline.</p>
+
+<p>*Problem description<br>
+*Important existing solutions<br>
+*Description of our solution<br>
+*Results<br>
+*Analysis and Concustions</p>
+
+	<p>Let us first describe the problem itself.</p>
+
+<p>We must implement a concurrent HTTP Proxy server that works as a gateway  to the www.nbu.bg using threads.
+The server side of the proxy must use the passiveTCP() which we will describe how does it work in the description of the solution. For connection requests we must use the connectTCP() function. Both functions are given in the book of Comer, Internetworking with TCP/IP, so we will use them without change and we will explain how they work. We must also implement a cache which will store recent hashed URLs to improve load time. The server must be concurrent, which means that it must be able to process many client requests at a time. We are going to achieve this using threads.</p>
+
+	<p>The next part is outlining the already existing partial solutions.</p>
+
+<p>We use the word partial because there isn't a whole solution to the problem that we can use. There are only partial solutions that we must combine the best possible way to make them work all together.
+For example the TCPecho.c and TCPechod.c give us an example of how to create sockets, how can a client make a connection request using the up mentioned functions connectTCP and how can a server side application creates a socket and starts listening for upcoming connection requests.
+Another important solution is the Thread_Server implementation, which establish a connection with a client and puts that connection into separate Thread, which gives us an example of concurrent server.
+The last important solution is the htmlget.c application which will download an image from a given URL path of a web server. This application connects to some web server and sends a GET request which returns the resources at that given URL path. Then the application writes the returned data from the web server to a file which becomes the picture itself.</p>
+
+	<p>Now it's time for the description of our solution</p>
+
+<p>First we will explain the client side so that the server side can clarify everything.
+The client side is composed out of 5 main concepts. The first one is the declaration of important variables, like the host name, port number we are going to connect to. Since we are running our application on a sigle computer we set the host name to "localhost". The port number is depending on the port the server is listening to. We are also setting a default resource path name which later we are going to send in form of a request to the server. We also need a buffer for the response of the server. </p>
+	<font face="Courier New" size="2">char* host = "localhost";- Host name if not provided<br>
+	char* port_numb = "8888";- Port number if not provided<br>
+	char* resource_name = "/images/logo_bg.png";- The  default resource<br>
+    char* file_name = "pic.png";- The file name which we are going to write<br>
+    char buffer[BUFFER_SIZE];- Buffer for the data we read</font><br><br>
+<p>This is just a default values if we want to change something we get the change from the arguments of the application execution.
+After we've set the host name, port number etc. it is time to connect to the server making a connection request using the connectTCP(host, port) function.
+connectTCP(host,port) simply gets the host and port, converts them to the appropriate formats for example the port number must be in network byte order (BIG-Endian)</p> 
+	<font face="Courier New" size="2">sin.sin_port=htons((unsigned short)atoi(service));</font><br><br>
+<p>Next it allocates a socket and makes a connection request to the specified host on a specified port number, if everything is successfull it returns the socket with the already established connection.
+After the connection with the server is established the client writes the request to the server.</p>
+	<font face="Courier New" size="2">write(sock, resource_name, strlen(resource_name));</font><br><br>
+After that we open a file and we start waiting for a respons from the server.<br>
+	<font face="Courier New" size="2">open_file = open(file_name, O_RDWR | O_CREAT | O_FSYNC, 0755);<br>
+	while((n = read(sock, buffer, BUFFER_SIZE)));</font><br>
+At the end we detect where the returned html starts and we fill our buffer with the data we are recieving from the server.
+The final step is to write the buffer with the data to the file we opened previously.<br>
+
+<p>The next step is the server side implementation.
+The first step of the server is just like the client side, we initialize a container for the clients address, port number, slave socke, master socket etc.
+After that we assign the returned socket of passiveTCP(port, queue) to the master socket.
+passiveTCP() works just like the connectTCP with slight difference. At the end it binds the socket, which means that it assigns an address for that socket. After that it starts listening the socket for incoming client connection requests.
+The next step is to accept the connection request, after we accept it successfully, we create a thread and pass the socket that is connected to the client as a parameter of the function that each thread will execute.
+The function itself will connect the server to the web server of the specified host and port number in our case www.nbu.bg 80. Then the server reads the resource path the client is sending and calls the connectTCP to connect to the web server. Next the GET request is created and sent to the web server.
+The last step is to read what's the web server respons and send it to the client, after the reading is complete we close all opened file descriptors.</p>
+
+	Results<br><br>
+The results are that the client recieves the picture he provided URL path for, and downloads it to its local machine.<br><br>
+
+	Analysis and Conclusion
+<p>Straight forward solution with not much options, just getting the work done. Wanted to add a nice caching and hashing functions but it didn't work well. 
+Also had the vision of adding some more options, like different protocols, working with all kinds of hosts not only www.nbu.bg</p>
+</body>
+</html>
+
